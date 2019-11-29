@@ -5,6 +5,8 @@ import { Logger } from '@overnightjs/logger';
 import { DefaultController } from './default/Default.controller';
 import swagger from 'swagger-jsdoc';
 import * as swaggerUi from 'swagger-ui-express';
+import fileUpload from "express-fileupload";
+import { ConverterController } from './converter/Converter.controller';
 
 export class FreeFolkServer extends Server {
 
@@ -17,16 +19,18 @@ export class FreeFolkServer extends Server {
             apis: ['**/*.controller.ts'],
             swaggerDefinition: {
                 info: {
-                    description: 'Theater API',
-                    title: 'Movie theater',
+                    description: 'Converter API',
+                    title: 'Multimedia converter',
                     version: '1.0.0',
                 },
             },
         });
         this.app.use(json());
         this.app.use(urlencoded({extended: true}));
+        this.app.use(fileUpload());
         this.addControllers([
             new DefaultController(),
+            new ConverterController(),
         ]);
         this.app.use(
             '/swagger',
