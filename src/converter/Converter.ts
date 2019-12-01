@@ -1,20 +1,26 @@
-import { UploadedFile } from "express-fileupload";
 import ffmpeg from "fluent-ffmpeg";
 import { Readable, PassThrough } from "stream";
 import { WriteStream } from "fs";
 
 export class Converter {
 
-    public static async convert({
+    public static convert({
         file, format
-    }: IConvertArgs): Promise<WriteStream> {
+    }: IConvertArgs): IConvertResponse {
         const write = new PassThrough();
-        ffmpeg({
-            source: file
-        })
-        .toFormat(format)
-        .writeToStream(write);
-        return write as any;
+        const promise = new Promise<void>((resolve, reject) => {
+            ffmpeg({
+                source: file
+            })
+            .toFormat(format)
+            .writeToStream(write)
+            .on("finish", resolve)
+            .on("error", reject);
+        });
+        return {
+            writeStream: write as any,
+            done: promise
+        }
     }
 
     public static bufferToStream(buffer: Buffer): Readable {
@@ -30,4 +36,9 @@ export class Converter {
 export interface IConvertArgs {
     file: Readable;
     format: string;
+}
+
+export interface IConvertResponse {
+    writeStream: WriteStream;
+    done: Promise<void>;
 }
