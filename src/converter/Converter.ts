@@ -13,6 +13,7 @@ export class Converter {
                 source: file
             })
             .toFormat(format)
+            // .outputOptions("-metadata", `artist=seirius`)
             .writeToStream(write)
             .on("finish", resolve)
             .on("error", reject);

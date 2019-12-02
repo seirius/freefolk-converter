@@ -106,13 +106,6 @@ export class ConverterController {
      *            description: File to upload
      *            required: true
      *          - in: formData
-     *            name: id
-     *            type: string
-     *            required: true
-     *          - in: formData
-     *            name: tags
-     *            type: string
-     *          - in: formData
      *            name: format
      *            type: string
      *            required: true
@@ -136,19 +129,10 @@ export class ConverterController {
     @Post("convert-and-download")
     @Catch
     public async convertAndDownload(req: Request, res: Response): Promise<void> {
-        const {format, id, from} = req.body;
-        let {tags} = req.body;
-        if (!tags) {
-            tags = [];
-        } else {
-            tags = tags.split(",");
-        }
+        const {format, from} = req.body;
         
         if (!req.files || !Object.keys(req.files).length) {
             throw new HttpError("No file was sent", BAD_REQUEST);
-        }
-        if (!id) {
-            throw new HttpError("ID not valid", BAD_REQUEST);
         }
         if (!format || !from) {
             throw new HttpError("Format/From not valid", BAD_REQUEST);
