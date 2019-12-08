@@ -7,5 +7,5 @@
 ## Filemanager config
 | Name  | Default  | Description  |
 |---|---|---|
-| PFILE_MANAGER_HOSTORT  |  | Filemanager http address  |
+| FILE_MANAGER_HOST  |  | Filemanager http address  |
 ---
