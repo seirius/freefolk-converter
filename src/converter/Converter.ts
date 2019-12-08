@@ -1,9 +1,10 @@
 import ffmpeg from "fluent-ffmpeg";
 import { Readable, PassThrough } from "stream";
-import { createReadStream, promises, WriteStream, ReadStream } from "fs";
+import { createReadStream, promises, WriteStream, ReadStream, createWriteStream } from "fs";
 import Axios from "axios";
 import { join } from "path";
 import { tmpdir } from "os";
+import MemoryStream from "memory-stream";
 
 export class Converter {
 
@@ -30,52 +31,38 @@ export class Converter {
             url
         }, metadata, filename, writeTo
     }: IConvertMp4ToMp3Args): Promise<void> {
-        const auxWrite = new PassThrough();
-        console.log(0);
+        const tempPathFilename = join(tmpdir(), filename + ".mp3");
+        const writeStream = new MemoryStream();
         await Converter.convert({
             file: file,
             format: "mp3",
             metadata,
-            writeTo: auxWrite as any
+            writeTo: writeStream as any
         });
-        console.log(0.5);
-        if (!image && !url) {
-            auxWrite.pipe(writeTo);
-            return;
-        }
-        let imageStream: any;
+
+        const tempPathImage = join(tmpdir(), filename + "image");
+        const writeStreamImage = createWriteStream(tempPathImage);
+
         if (image) {
-            imageStream = image;
+            image.pipe(writeStreamImage);
         } else {
-            imageStream = new PassThrough() as any;
             (await Axios({
                 url: url,
                 method: "GET",
                 responseType: "stream"
-            })).data.pipe(imageStream);
+            })).data.pipe(writeStreamImage);
         }
-        console.log(1);
-        
-        const tempPathFilename = join(tmpdir(), filename + ".mp3");
-        const tempPathImage = join(tmpdir(), filename + "image");
-        
-        await promises.writeFile(tempPathImage, imageStream);
-        console.log(2);
-        
-        const auxRead = new PassThrough();
-        auxWrite.pipe(auxRead);
-        console.log(3);
+
         await Converter.addImageToMp3({
-            audio: auxRead,
+            audio: Converter.bufferToStream(writeStream.get()),
             imagePath: tempPathImage,
             savePath: tempPathFilename
         });
-        console.log(4);
-
-        await Converter.pipeTempMp3AndRemove({
+        await Converter.pipeTo({
             tempFilename: tempPathFilename,
             writeTo
         });
+        await Converter.removeTempFiles(tempPathImage, tempPathFilename);
     }
 
     public static addImageToMp3({audio, imagePath, savePath}: IAddImageToMp3): Promise<void> {
@@ -87,22 +74,24 @@ export class Converter {
                 "-c", "copy", "-id3v2_version", "3"
             ])
             .save(savePath)
-            .on("finish", resolve)
+            .on("end", resolve)
             .on("error", reject);
         });
     }
 
-    private static pipeTempMp3AndRemove({tempFilename, writeTo}: {
+    private static removeTempFiles(...args: string[]): Promise<any> {
+        return Promise.all(args.map((path) => promises.unlink(path)));
+    }
+
+    private static pipeTo({tempFilename, writeTo}: {
         tempFilename: string;
         writeTo: WriteStream;
     }): Promise<void> {
         return new Promise((resolve, reject) => {
             createReadStream(tempFilename)
             .pipe(writeTo)
-            .on("finish", async () => {
-                await promises.unlink(tempFilename);
-                resolve(); 
-            }).on("error", reject);
+            .on("finish", resolve)
+            .on("error", reject);
         });
     }
 
@@ -126,7 +115,7 @@ export interface IConvertArgs {
 export interface IConvertMp4ToMp3Args {
     file: ReadStream;
     image: {
-        image: Buffer;
+        image: ReadStream;
         url: string;
     };
     metadata?: Record<string, any>;

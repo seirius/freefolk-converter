@@ -234,8 +234,11 @@ export class ConverterController {
         await Converter.convertMp4ToMp3({
             file: fileStream as any,
             filename: rawFilename,
-            image: imageStream as any,
-            metadata,
+            image: {
+                image: imageStream as any,
+                url: imageUrl
+            },
+            metadata: parsedMetadata,
             writeTo: res as any
         });
 
