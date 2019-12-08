@@ -4,7 +4,6 @@ import { createReadStream, promises, WriteStream, ReadStream } from "fs";
 import Axios from "axios";
 import { join } from "path";
 import { tmpdir } from "os";
-import { WritableStream } from "memory-streams";
 
 export class Converter {
 

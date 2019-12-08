@@ -9,7 +9,6 @@ import { Logger } from "@overnightjs/logger";
 import { FileManager } from "../filemanager/FileManager";
 import { basename } from "path";
 import { lookup } from 'mime-types';
-import { WritableStream, ReadableStream } from "memory-streams";
 import { PassThrough } from "stream";
 
 @Controller("")
