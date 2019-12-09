@@ -8,3 +8,4 @@ Dockerfile*
 LICENSE
 .dockerignore
 .git
+.env

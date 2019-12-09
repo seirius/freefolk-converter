@@ -245,4 +245,96 @@ export class ConverterController {
         res.end(OK);
     }
 
+    /**
+     * @swagger
+     * /convert-mp3-mp4:
+     *  post:
+     *      tags:
+     *          - convert
+     *      consumes:
+     *          - multipart/form-data
+     *      parameters:
+     *          - in: formData
+     *            name: file
+     *            type: file
+     *            description: File to upload
+     *            required: true
+     *          - in: formData
+     *            name: image
+     *            type: file
+     *            description: Cover as file
+     *          - in: formData
+     *            name: imageUrl
+     *            type: string
+     *          - in: formData
+     *            name: id
+     *            type: string
+     *            required: true
+     *          - in: formData
+     *            name: tags
+     *            type: string
+     *          - in: formaData
+     *            name: metadata
+     *            type: string
+     *      responses:
+     *          200:
+     *              description: ok
+     *              schema:
+     *                  type: object
+     *                  properties:
+     *                      ok:
+     *                          type: boolean
+     *                          value: true
+     */
+    @Post("convert-mp3-mp4")
+    @Catch
+    public async convertMp4ToMp3(req: Request, res: Response): Promise<void> {
+        const {id, metadata, imageUrl} = req.body;
+        let parsedMetadata = {};
+        if (typeof metadata === "string") {
+            parsedMetadata = JSON.parse(metadata);
+        }
+
+        let {tags} = req.body;
+        if (!tags) {
+            tags = [];
+        } else {
+            tags = tags.split(",");
+        }
+        
+        if (!req.files || !Object.keys(req.files).length) {
+            throw new HttpError("No file was sent", BAD_REQUEST);
+        }
+
+        const {file, image}: {file: UploadedFile, image: UploadedFile} = req.files as any;
+        const rawFilename = basename(file.name, ".mp4");
+        const fileStream = Converter.bufferToStream(file.data);
+        const imageStream = image ? Converter.bufferToStream(image.data) : undefined;
+        const filename = `${rawFilename}.mp3`;
+        
+        res.status(OK).json({ok: true});
+        try {
+            const writeStream = new PassThrough();
+            Converter.convertMp4ToMp3({
+                file: fileStream as any,
+                filename: rawFilename,
+                image: {
+                    image: imageStream as any,
+                    url: imageUrl
+                },
+                metadata: parsedMetadata,
+                writeTo: writeStream as any
+            }).catch((error) => Logger.Err(error, true));
+            const readStream = new PassThrough();
+            writeStream.pipe(readStream);
+            await FileManager.upload({
+                file: readStream as any,
+                filename,
+                id: `${id}:mp3`, tags
+            });
+        } catch (error) {
+            Logger.Err(error, true);
+        }
+    }
+
 }
