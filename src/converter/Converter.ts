@@ -41,17 +41,8 @@ export class Converter {
         });
 
         const tempPathImage = join(tmpdir(), filename + "image");
-        const writeStreamImage = createWriteStream(tempPathImage);
 
-        if (image) {
-            image.pipe(writeStreamImage);
-        } else {
-            (await Axios({
-                url: url,
-                method: "GET",
-                responseType: "stream"
-            })).data.pipe(writeStreamImage);
-        }
+        await Converter.writeImage({image, url, path: tempPathImage});
 
         await Converter.addImageToMp3({
             audio: Converter.bufferToStream(writeStream.get()),
@@ -75,6 +66,28 @@ export class Converter {
             ])
             .save(savePath)
             .on("end", resolve)
+            .on("error", reject);
+        });
+    }
+
+    private static writeImage({image, url, path}: {
+        image: ReadStream, 
+        url: string, 
+        path: string
+    }): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            const writeStreamImage = createWriteStream(path);
+            if (image) {
+                image.pipe(writeStreamImage);
+            } else {
+                (await Axios({
+                    url: url,
+                    method: "GET",
+                    responseType: "stream"
+                })).data.pipe(writeStreamImage);
+            }
+            writeStreamImage
+            .on("finish", resolve)
             .on("error", reject);
         });
     }

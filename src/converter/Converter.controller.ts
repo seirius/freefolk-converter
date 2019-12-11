@@ -330,7 +330,7 @@ export class ConverterController {
             await FileManager.upload({
                 file: readStream as any,
                 filename,
-                id: `${id}:mp3`, tags
+                id: `${id}_mp3`, tags
             });
         } catch (error) {
             Logger.Err(error, true);
