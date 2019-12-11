@@ -79,16 +79,17 @@ export class Converter {
             const writeStreamImage = createWriteStream(path);
             if (image) {
                 image.pipe(writeStreamImage);
+                resolve();
             } else {
                 (await Axios({
                     url: url,
                     method: "GET",
                     responseType: "stream"
                 })).data.pipe(writeStreamImage);
+                writeStreamImage
+                .on("finish", resolve)
+                .on("error", reject);
             }
-            writeStreamImage
-            .on("finish", resolve)
-            .on("error", reject);
         });
     }
 
