@@ -8,8 +8,8 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     const options = new DocumentBuilder()
-    .setTitle("Freefolk microservice template")
-    .setDescription("Freefolk microservice template")
+    .setTitle("Freefolk converter")
+    .setDescription("Freefolk converter")
     .setVersion("1.5")
     .addTag("freefolk")
     .build();
