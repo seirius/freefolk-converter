@@ -4,7 +4,7 @@ import { ConvertDto, ConvertResponseDto, ConvertAndDownloadDto, ConvertMp4Mp3And
 import { FileInterceptor, FileFieldsInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { PassThrough } from "stream";
-import { ConverterService } from "./converter.service";
+import { ConverterService, ConvertState } from "./converter.service";
 import { basename } from "path";
 import { FileManagerService } from "./../filemanager/filemanager.service";
 import { lookup } from "mime-types";
@@ -17,7 +17,8 @@ export class ConverterController {
     constructor(
         private readonly converterService: ConverterService,
         private readonly fileManagerService: FileManagerService
-    ) {}
+    ) {
+    }
 
     @Post("convert")
     @HttpCode(HttpStatus.OK)
@@ -64,11 +65,19 @@ export class ConverterController {
             }).catch((error) => this.logger.error(error));
             const readStream = new PassThrough();
             writeStream.pipe(readStream);
+
+            const rawFilename = basename(file.originalname, `.${from}`);
+            const filename = `${rawFilename}.${format}`;
             await this.fileManagerService.upload({
                 file: readStream as any,
                 filename: `${basename(file.originalname, `.${from}`)}.${format}`,
                 id: `${id}:${format}`,
                 tags: formattedTags
+            });
+
+            this.converterService.convertEvent({
+                id: "custom_convert",
+                filename, rawFilename, state: ConvertState.DONE
             });
         } catch (error) {
             this.logger.error(error);
@@ -105,7 +114,8 @@ export class ConverterController {
             throw new HttpException("Format/From not valid", HttpStatus.BAD_REQUEST);
         }
 
-        const filename = `${basename(file.originalname, `.${from}`)}.${format}`;
+        const rawFilename = basename(file.originalname, `.${from}`);
+        const filename = `${rawFilename}.${format}`;
         response.setHeader("Content-disposition", "attachment; filename=" + filename);
         response.setHeader("x-suggested-filename", filename);
         response.setHeader("content-type", lookup(filename) || "application/octet-stream");
@@ -115,6 +125,11 @@ export class ConverterController {
             format,
             metadata: parsedMetadata,
             writeTo: response as any
+        });
+
+        this.converterService.convertEvent({
+            id: "custom_convert",
+            filename, rawFilename, state: ConvertState.DONE
         });
 
         response.end(HttpStatus.OK);
@@ -172,6 +187,11 @@ export class ConverterController {
             writeTo: response as any
         });
 
+        this.converterService.convertEvent({
+            id: "custom_convert",
+            filename, rawFilename, state: ConvertState.DONE
+        });
+
         response.end(HttpStatus.OK);
     }
 
@@ -191,6 +211,7 @@ export class ConverterController {
         @Body() {imageUrl, id, tags, metadata}: ConvertMp4Mp3Dto,
         @nResponse() response: Response
     ): Promise<void> {
+        const newId = `${id}_mp3`;
         const parsedMetadata = JSON.parse(metadata);
         const parsedTags = tags.split(",");
         
@@ -224,8 +245,13 @@ export class ConverterController {
             await this.fileManagerService.upload({
                 file: readStream as any,
                 filename,
-                id: `${id}_mp3`,
+                id: newId,
                 tags: parsedTags
+            });
+
+            this.converterService.convertEvent({
+                id: newId,
+                filename, rawFilename, state: ConvertState.DONE
             });
         } catch (error) {
             this.logger.error(error);

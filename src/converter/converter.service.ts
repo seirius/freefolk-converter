@@ -6,9 +6,19 @@ import { join } from "path";
 import { tmpdir } from "os";
 import MemoryStream from "memory-stream";
 import Axios from "axios";
+import { MqttService } from "nest-mqtt-client";
 
 @Injectable()
 export class ConverterService {
+
+    constructor(
+        private readonly mqttService: MqttService
+    ) {
+        this.mqttService.sub({
+            channel: "convert",
+            callback: console.log
+        });
+    }
 
     public convert({
         file, format, metadata, writeTo
@@ -119,6 +129,17 @@ export class ConverterService {
         return stream;
     }
 
+    public convertEvent({
+        id, filename, rawFilename, state
+    }: IConvertEvent): void {
+        this.mqttService.push({
+            channel: "convert",
+            payload: {
+                id, filename, rawFilename, state
+            }
+        });
+    }
+
 }
 
 export interface IConvertArgs {
@@ -143,4 +164,16 @@ export interface IAddImageToMp3 {
     audio: any;
     imagePath: string;
     savePath: string;
+}
+
+export enum ConvertState {
+    INIT = "init",
+    DONE = "done"
+}
+
+export interface IConvertEvent {
+    id: string;
+    filename: string;
+    rawFilename: string;
+    state: ConvertState;
 }

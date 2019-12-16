@@ -41,6 +41,7 @@
     "form-data": "^3.0.0",
     "memory-stream": "^1.0.0",
     "mime-types": "^2.1.25",
+    "nest-mqtt-client": "git+https://github.com/seirius/nest-mqtt-client.git",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
     "rxjs": "^6.5.3",
