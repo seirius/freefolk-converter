@@ -4,6 +4,8 @@ WORKDIR /usr/src/app
 
 RUN apk add --no-cache ffmpeg
 
+RUN apk add --no-cache git
+
 COPY ./ ./
 
 RUN npm install && npm install -g @nestjs/cli && nest build
