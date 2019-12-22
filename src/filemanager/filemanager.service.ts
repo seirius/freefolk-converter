@@ -16,7 +16,8 @@ export class FileManagerService {
         formData.append("id", id);
         formData.append("tags", tags.join(","));
         await Axios.post(resolve(FileManagerConfig.HOST, "upload"), formData, {
-            headers: formData.getHeaders()
+            headers: formData.getHeaders(),
+            maxContentLength: Infinity,
         });
     }
 
