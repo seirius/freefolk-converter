@@ -74,11 +74,6 @@ export class ConverterController {
                 id: `${id}:${format}`,
                 tags: formattedTags
             });
-
-            this.converterService.convertEvent({
-                id: "custom_convert",
-                filename, rawFilename, state: ConvertState.DONE
-            });
         } catch (error) {
             this.logger.error(error);
         }
@@ -125,11 +120,6 @@ export class ConverterController {
             format,
             metadata: parsedMetadata,
             writeTo: response as any
-        });
-
-        this.converterService.convertEvent({
-            id: "custom_convert",
-            filename, rawFilename, state: ConvertState.DONE
         });
 
         response.end(HttpStatus.OK);
@@ -187,11 +177,6 @@ export class ConverterController {
             writeTo: response as any
         });
 
-        this.converterService.convertEvent({
-            id: "custom_convert",
-            filename, rawFilename, state: ConvertState.DONE
-        });
-
         response.end(HttpStatus.OK);
     }
 
@@ -247,11 +232,6 @@ export class ConverterController {
                 filename,
                 id: newId,
                 tags: parsedTags
-            });
-
-            this.converterService.convertEvent({
-                id: newId,
-                filename, rawFilename, state: ConvertState.DONE
             });
         } catch (error) {
             this.logger.error(error);
