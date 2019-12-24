@@ -212,7 +212,6 @@ export class ConverterController {
         const imageStream = image ? this.converterService.bufferToStream(image.buffer) : undefined;
         const filename = `${rawFilename}.mp3`;
         
-        response.status(HttpStatus.OK).json({ok: true});
         try {
             const writeStream = new PassThrough();
             this.converterService.convertMp4ToMp3({
@@ -236,6 +235,8 @@ export class ConverterController {
         } catch (error) {
             this.logger.error(error);
         }
+        
+        response.status(HttpStatus.OK).json({ok: true});
     }
 
 }
