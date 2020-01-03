@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { DefaultModule } from './default/default.module';
+import { ConverterModule } from './converter/converter.module';
 
 @Module({
-    imports: [DefaultModule],
+    imports: [DefaultModule, ConverterModule],
     controllers: [],
     providers: [],
 })
